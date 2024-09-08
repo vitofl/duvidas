@@ -1,414 +1,186 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Dados</title>
-    
-    <script>
-    function addData(e) {
-        e.preventDefault();  // Previne o comportamento padrão do formulário
-
-        const date = document.getElementById('date').value;
-        const doubtType = document.getElementById('doubtType').value;
-        const systems = [];
-        if (document.getElementById('velti').checked) systems.push('Velti');
-        if (document.getElementById('webdixi').checked) systems.push('WebDixi');
-        const analyst = document.getElementById('analyst').value;
-        const observation = document.getElementById('observation').value;
-        
-        // Executa o método Apps Script para adicionar dados à planilha
-        google.script.run
-            .withSuccessHandler(() => {
-                showMessage('Dados cadastrados com sucesso!', 'success');
-                resetForm();  // Reseta o formulário após o sucesso
-            })
-            .withFailureHandler((error) => {
-                showMessage('Erro ao cadastrar os dados: ' + error.message, 'error');
-            })
-            .addDataToSheet(date, doubtType, systems, analyst, observation);
-    }
-
-    function showMessage(message, type) {
-        const messageDiv = document.getElementById('message');
-        messageDiv.innerText = message;
-        messageDiv.style.color = type === 'success' ? 'green' : 'red';
-    }
-
-    function resetForm() {
-        // Reseta os campos de input de texto e data
-        document.getElementById('date').value = '';
-        document.getElementById('dataInicial').value = '';
-        document.getElementById('dataFinal').value = '';
-        document.getElementById('observation').value = '';
-
-        // Reseta os selects para o valor padrão
-        document.getElementById('analyst').selectedIndex = 0;
-        document.getElementById('doubtType').selectedIndex = 0;
-        document.getElementById('analyst2').selectedIndex = 0;
-
-        // Desmarca todos os radio buttons
-        document.querySelectorAll('input[name="system"]').forEach((radio) => radio.checked = false);
-    }
-
-    function pesquisarDados(e) {
-        e.preventDefault();  // Previne o comportamento padrão do formulário
-
-        const dataInicial = document.getElementById('dataInicial').value;
-        const dataFinal = document.getElementById('dataFinal').value;
-        const analistaSelecionado = document.getElementById('analyst2').value;  // Pegando o analista selecionado
-        const sistemaSelecionado = document.querySelector('input[name="system"]:checked')?.value;  // Pegando o sistema selecionado
-
-        // Executa o método Apps Script para pesquisar dados na planilha
-        google.script.run.withSuccessHandler((resultados) => {
-            exibirResultados(resultados);
-            resetForm();  // Reseta o formulário após a pesquisa
-        })
-        .pesquisarNaPlanilha(dataInicial, dataFinal, analistaSelecionado, sistemaSelecionado);
-    }
-
-    function exibirResultados(resultados) {
-        const top3DuvidasElement = document.querySelector('.round1');
-        const ocorrenciasPorSistemaElement = document.querySelector('.round2');
-        const rankingAnalistasElement = document.querySelector('.round3');
-
-        // Exibindo Top 3 Dúvidas
-        top3DuvidasElement.innerHTML = 'Top 3 Dúvidas: <br>' + resultados.top3Duvidas
-            .map(duvida => `${duvida.duvida}: ${duvida.contagem} ocorrências`).join('<br>');
-
-        // Exibindo Ocorrências por Sistema
-        ocorrenciasPorSistemaElement.innerHTML = 'Quantidade por sistema: <br>' + resultados.ocorrenciasPorSistema
-            .map(sistema => `${sistema.sistema}: ${sistema.contagem} ocorrências`).join('<br>');
-
-        // Exibindo Ranking de Analistas
-        rankingAnalistasElement.innerHTML = 'Ranking de analista com dúvida: <br>' + resultados.rankingAnalistas
-            .map(analista => `${analista.analista}: ${analista.contagem} dúvidas`).join('<br>');
-    }
-
-    // Função para ordenar as opções de qualquer select, mantendo o placeholder no topo
-    function ordenarOpcoesSelect(selectElement) {
-        const optionsArray = Array.from(selectElement.options);
-
-        // Identifica o placeholder por suas características
-        const placeholder = optionsArray.find(option => option.value === "" && option.disabled && option.selected);
-
-        // Filtra as opções que não são o placeholder
-        const optionsToSort = optionsArray.filter(option => option !== placeholder);
-
-        // Ordena o array das opções (sem incluir o placeholder)
-        optionsToSort.sort((a, b) => a.text.localeCompare(b.text));
-
-        // Remove as opções antigas
-        selectElement.innerHTML = '';
-
-        // Adiciona o placeholder de volta ao select
-        if (placeholder) {
-            selectElement.add(placeholder);
-        }
-
-        // Adiciona as opções ordenadas de volta ao select
-        optionsToSort.forEach(option => selectElement.add(option));
-    }
-
-    // Função para adicionar uma nova opção ao select e ordenar
-    function adicionarOption(selectId, novoValor) {
-        const selectElement = document.getElementById(selectId);
-
-        // Adiciona a nova opção
-        const novaOpcao = new Option(novoValor, novoValor);
-        selectElement.add(novaOpcao);
-
-        // Ordena as opções após adicionar a nova
-        ordenarOpcoesSelect(selectElement);
-    }
-
-    // Ordena as opções ao carregar a página para ambos os selects
-    document.addEventListener('DOMContentLoaded', () => {
-        const selectAnalyst = document.getElementById('analyst');
-        const selectDoubtType = document.getElementById('doubtType');
-        
-        // Ordena as opções nos dois selects
-        ordenarOpcoesSelect(selectAnalyst);
-        ordenarOpcoesSelect(selectDoubtType);
-    });
-
-</script>
-
-
+    <title>Calculadora de Horas</title>
     <style>
-        /* Estilo do corpo da página e layout principal */
         body {
-            background-color: #121212;
-            color: #ffffff;
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            margin: 20px;
         }
-
         .container {
-            display: flex;
-            flex-direction: column; /* Flexbox em coluna para empilhar as divs */
-            align-items: center; /* Centraliza os itens horizontalmente */
-            width: 100%;
-            max-width: 1200px;
-            padding: 20px;
-            box-sizing: border-box;
+            max-width: 800px;
+            margin: 0 auto;
         }
-
-        .top-containers {
-            display: flex;
-            justify-content: center;
-            gap: 20px; /* Espaçamento entre as divs laterais */
-            width: 100%;
-            margin-bottom: 20px; /* Espaçamento abaixo dos contêineres superiores */
+        label, input {
+            font-size: 16px;
         }
-
-        .form-container, .form-container-pesquisa {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .form-container-resultado {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 1040px; /* Pode ser ajustado conforme necessário */
-        }
-
-        .result-items {
-            display: flex; /* Torna o contêiner flexível */
-            justify-content: space-between; /* Espaça uniformemente os elementos filhos */
-            margin-top: 20px; /* Espaçamento entre o título e os parágrafos */
-        }
-
-        .input-container {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 15px;
-        }
-
         label {
-            margin-bottom: 5px;
+            display: block;
+            margin-bottom: 8px;
         }
-
-        input[type="date"],
-        select,
-        textarea {
+        input[type="text"] {
+            width: 100px;
             padding: 8px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            background-color: #2a2a2a;
-            color: #ffffff;
-        }
-
-        input[type="radio"] {
             margin-right: 10px;
         }
-
-        .options {
-            margin-bottom: 10px;
+        .marcacoes input[type="text"] {
+            margin-right: 5px;
         }
-
-        .botao-submit {
-            padding: .5rem 1rem;
-            cursor: pointer;
-            outline: none;
+        button {
+            padding: 10px 20px;
+            background-color: #288cea;
             border: none;
-            border-radius: 4px;
-            background-color: #007bff;
-            color: #fff;
-            transition: all .3s;
-            display: block;
-            margin: 0 auto; /* Centraliza o botão */
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 10px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            
         }
 
-        .botao-submit:hover {
-            background-color: #0056b3;
-            transform: scale(1.05);
+        thead th, tbody td {
+            border: none;
+            background-color: #ffffff;
         }
-
-        p.round1, p.round2, p.round3 {
-            border: 2px solid rgb(144, 143, 143); /* Borda de cada retângulo */
-            border-radius: 10px; /* Arredonda os cantos de cada retângulo */
+        
+        .resultado {
+            border: 2px solid rgb(6, 6, 6); /* Borda de cada retângulo */
+            border-radius: 2500px; /* Arredonda os cantos de cada retângulo */
             padding: 5px; /* Espaçamento interno de cada retângulo */
             width: 240px; /* Largura de cada retângulo */
+        }
+        .Borda {
+            border-radius: 5px;
+            border: 1px solid rgb(0, 0, 0);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="top-containers">
-            <!-- Div de Cadastro de Dados -->
-            <div class="form-container">
-                <h1>Cadastro de Dados</h1>
-                <form onsubmit="addData(event);">
-                    <div class="input-container">
-                        <label for="date">Data:</label>
-                        <input type="date" id="date" placeholder="Selecione uma data" required>
-                    </div>
+        <label style="font-family: Arial, sans-serif; font-size: 24px;" for="carga-horaria">Carga Horária</label>
+        <input class="Borda" type="time" id="carga-horaria" name="carga-horaria" placeholder="Ex: 8h 0m">
+        <br><br>
 
-                    <div class="input-container">
-                        <label for="analyst">Analista:</label>
-                        <select id="analyst" required>
-                            <option value="" disabled selected>Selecione um analista:</option>
-                            <option value="Antony Camargo">Antony Camargo</option>
-                            <option value="Gabrielle Blazius">Gabrielle Blazius</option>
-                            <option value="Guilherme Maciel">Guilherme Maciel</option>
-                            <option value="Guilherme Modelli">Guilherme Modelli</option>
-                            <option value="José Capristo">José Capristo</option>
-                            <option value="Julio Felipe">Julio Felipe</option>
-                            <option value="Lucas Blan">Lucas Blan</option>
-                            <option value="Lucas Jonathan">Lucas Jonathan</option>
-                            <option value="Miguel Nunes">Miguel Nunes</option>
-                            <option value="Pedro Laskawski">Pedro Laskawski</option>
-                            <option value="Rafael Quadros">Rafael Quadros</option>
-                            <option value="Rafael Venetikides">Rafael Venetikides</option>
-                            <option value="Thiago Schmitt">Thiago Schmitt</option>
-                            <option value="Vinicius Tobias">Vinicius Tobias</option>
-                            <option value="Vitor Antonio">Vitor Antonio</option>
-                            <option value="Vitor Leite">Vitor Leite</option>
-                            <option value="William Garcia">William Garcia</option>
-                            <option value="Aaaaaaaaaa">Aaaaaaaaaa</option>
-                            <option value="Bbbbbbbbbb">Bbbbbbbbbb</option>
-                        </select>
-                    </div>
-                    
-                    <div class="input-container">
-                        <label for="system">Qual Sistema:</label>
-                        <div class="options">
-                            <input type="radio" id="velti" name="system" value="Velti"> Velti
-                            <input type="radio" id="webdixi" name="system" value="WebDixi"> WebDixi
-                        </div>
-                    </div>
-
-                    <div class="input-container">
-                        <label for="observation">Observação:</label>
-                        <textarea id="observation" rows="4" cols="50" placeholder="Insira suas observações"></textarea>
-                    </div>
-
-                    <div class="input-container">
-                        <label for="doubtType">Tipo de Dúvida:</label>
-                        <select id="doubtType" required>
-                            <option value="" disabled selected>Selecione um tipo de dúvida:</option>
-                            <option value="Adicional noturno">Adicional noturno</option>
-                            <option value="AFD Mobile">AFD Mobile</option>
-                            <option value="Arquivos MTE">Arquivos MTE</option>
-                            <option value="Biometria">Biometria</option>
-                            <option value="Cadastro de funcionário">Cadastro de funcionário</option>
-                            <option value="Cálculo">Cálculo</option>
-                            <option value="Campo do relatório">Campo do relatório</option>
-                            <option value="Coletor">Coletor</option>
-                            <option value="Competência">Competência</option>
-                            <option value="Comprovante por e-mail">Comprovante por e-mail</option>
-                            <option value="Comunica Coletor">Comunica Coletor</option>
-                            <option value="Comunica Idnox">Comunica Idnox</option>
-                            <option value="Comunica Irep">Comunica Irep</option>
-                            <option value="Comunica Ponto E">Comunica Ponto E</option>
-                            <option value="Comunica Prisma ADV">Comunica Prisma ADV</option>
-                            <option value="Configuração BH">Configuração BH</option>
-                            <option value="Configuração horário">Configuração horário</option>
-                            <option value="Crachá">Crachá</option>
-                            <option value="Duvida Relógio">Duvida Relógio</option>
-                            <option value="E1 S1 E2 S2 Duvida">E1 S1 E2 S2 Duvida</option>
-                            <option value="Enviar funcionário equip">Enviar funcionário equip</option>
-                            <option value="Escala 12x36">Escala 12x36</option>
-                            <option value="Escala agendada">Escala agendada</option>
-                            <option value="Escala fixa em geral">Escala fixa em geral</option>
-                            <option value="Facial não reconhece rosto">Facial não reconhece rosto</option>
-                            <option value="Feriado">Feriado</option>
-                            <option value="Grupo de permissão">Grupo de permissão</option>
-                            <option value="Hora In Itinere">Hora In Itinere</option>
-                            <option value="Horário mensal">Horário mensal</option>
-                            <option value="Importar AFD relógio">Importar AFD relógio</option>
-                            <option value="Justificativa em lote">Justificativa em lote</option>
-                            <option value="Layout de exportação">Layout de exportação</option>
-                            <option value="Limite de marcação">Limite de marcação</option>
-                            <option value="Login mobile">Login mobile</option>
-                            <option value="Marcação desconsiderada">Marcação desconsiderada</option>
-                            <option value="Marcação não subindo">Marcação não subindo</option>
-                            <option value="Percentual de extra">Percentual de extra</option>
-                            <option value="Ponto coletor não subindo">Ponto coletor não subindo</option>
-                            <option value="Recálculo">Recálculo</option>
-                            <option value="Relatório">Relatório</option>
-                            <option value="Vinculo de horário">Vinculo de horário</option>
-                            <option value="Zerar BH">Zerar BH</option>
-                        </select>
-                    </div>
-
-                    <div id="message" style="margin-top: 20px; color: white;"></div>
-            
-                    <button class="botao-submit" type="submit">Cadastrar</button>
-                </form>
-            </div>
-
-            <!-- Div de Pesquisa de Dados -->
-            <div class="form-container-pesquisa">
-                <h1>Pesquisa de Dados</h1>
-                <form onsubmit="pesquisarDados(event);">
-                    <div class="input-container">
-                        <label for="dataInicial">Data Inicial:</label>
-                        <input type="date" id="dataInicial" placeholder="Selecione a data inicial">
-                    </div>
-                    <div class="input-container">
-                        <label for="dataFinal">Data Final:</label>
-                        <input type="date" id="dataFinal" placeholder="Selecione a data final">
-                    </div>
-                    <div class="input-container">
-                        <label for="system">Qual Sistema:</label>
-                        <div class="options">
-                            <input type="radio" id="velti2" name="system" value="Velti"> Velti
-                            <input type="radio" id="webdixi2" name="system" value="WebDixi"> WebDixi
-                        </div>
-                    </div>
-                    <div class="input-container">
-                        <label for="analyst">Analista:</label>
-                        <select id="analyst2">
-                            <option value="" disabled selected>Selecione um analista:</option>
-                            <option value="Antony Camargo">Antony Camargo</option>
-                            <option value="Gabrielle Blazius">Gabrielle Blazius</option>
-                            <option value="Guilherme Maciel">Guilherme Maciel</option>
-                            <option value="Guilherme Modelli">Guilherme Modelli</option>
-                            <option value="José Capristo">José Capristo</option>
-                            <option value="Julio Felipe">Julio Felipe</option>
-                            <option value="Lucas Blan">Lucas Blan</option>
-                            <option value="Lucas Jonathan">Lucas Jonathan</option>
-                            <option value="Miguel Nunes">Miguel Nunes</option>
-                            <option value="Pedro Laskawski">Pedro Laskawski</option>
-                            <option value="Rafael Quadros">Rafael Quadros</option>
-                            <option value="Rafael Venetikides">Rafael Venetikides</option>
-                            <option value="Thiago Schmitt">Thiago Schmitt</option>
-                            <option value="Vitor Antonio">Vitor Antonio</option>
-                            <option value="Vitor Leite">Vitor Leite</option>
-                            <option value="William Garcia">William Garcia</option>
-                            <option value="Aaaaaaaaaa">Aaaaaaaaaa</option>
-                            <option value="Bbbbbbbbbb">Bbbbbbbbbb</option>
-                        </select>
-                    </div>
-                    <button class="botao-submit" type="submit">Pesquisar</button>
-                </form>
-            </div>
+        <label style="font-family: Arial, sans-serif; font-size: 24px;">Marcações</label>
+        <div class="marcacoes" id="marcacoes">
+            <input class="Borda" type="time" name="marcacao1">
+            <input class="Borda" type="time" name="marcacao2">
+            <input class="Borda" type="time" name="marcacao3">
+            <input class="Borda" type="time" name="marcacao4">
+            <button id="add-marcacao">+</button>
         </div>
 
-        <!-- Div de Resultados -->
-        <div class="form-container-resultado">
-            <h1>Resultado</h1>
-            <!-- Contêiner flexível para parágrafos -->
-            <div class="result-items">
-                <p class="round1">Top 3 Dúvidas:</p>
-                <p class="round2">Quantidade por sistema:</p>
-                <p class="round3">Ranking de analista com dúvida:</p>
-            </div>
-        </div>
+        <button id="calcular">CALCULAR</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>HORAS TRABALHADAS</th>
+                    <th>DÉBITO</th>
+                    <th>CRÉDITO</th>
+                    <th>HORAS TRABALHADAS NORMAIS</th>
+                    <th>ADICIONAL NOTURNO</th>
+                    <th>INTERVALO</th>
+                </tr>
+            </thead>
+            <tbody class="resultado" id="resultados">
+                <tr>
+                    <td id="horas-trabalhadas">-</td>
+                    <td id="debito">-</td>
+                    <td id="credito">-</td>
+                    <td id="horas-normais">-</td>
+                    <td id="adicional-noturno">-</td>
+                    <td id="intervalo">-</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+    <script>
+        // Função para converter horas em milissegundos
+        function converterHoraParaMs(hora) {
+            const [h, m] = hora.split(':');
+            return (+h * 60 + +m) * 60 * 1000; // Convertendo horas e minutos para milissegundos
+        }
+
+        // Função para converter milissegundos para o formato HH:MM
+        function converterMsParaHora(ms) {
+            const horas = Math.floor(ms / (60 * 60 * 1000));
+            const minutos = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+            return `${horas}h ${minutos}m`;
+        }
+
+        // Adiciona mais marcações de tempo
+        document.getElementById('add-marcacao').addEventListener('click', function() {
+            const marcacoesDiv = document.getElementById('marcacoes');
+            const novaMarcacaoE = document.createElement('input');
+            novaMarcacaoE.setAttribute('type', 'time');
+            const novaMarcacaoS = document.createElement('input');
+            novaMarcacaoS.setAttribute('type', 'time');
+
+            marcacoesDiv.insertBefore(novaMarcacaoE, this);
+            marcacoesDiv.insertBefore(novaMarcacaoS, this);
+        });
+
+        // Função de cálculo ao clicar no botão CALCULAR
+        document.getElementById('calcular').addEventListener('click', function() {
+            const cargaHorariaInput = document.getElementById('carga-horaria').value;
+            const marcacoes = document.querySelectorAll('.marcacoes input[type="time"]');
+            
+            if (!cargaHorariaInput) {
+                alert('Por favor, insira a carga horária.');
+                return;
+            }
+
+            if (marcacoes.length < 2) {
+                alert('Insira pelo menos duas marcações de tempo.');
+                return;
+            }
+
+            // Converte a carga horária de string para milissegundos (Ex: "8h 0m")
+            const cargaHorariaMs = converterHoraParaMs(cargaHorariaInput.replace('h', ':').replace('m', ''));
+
+            let horasTrabalhadas = 0;
+            let intervaloTotal = 0;
+
+            for (let i = 0; i < marcacoes.length; i += 2) {
+                if (marcacoes[i] && marcacoes[i + 1] && marcacoes[i].value && marcacoes[i + 1].value) {
+                    const entradaMs = converterHoraParaMs(marcacoes[i].value);
+                    const saidaMs = converterHoraParaMs(marcacoes[i + 1].value);
+                    horasTrabalhadas += saidaMs - entradaMs;
+
+                    if (i > 0) {
+                        const ultimaSaidaMs = converterHoraParaMs(marcacoes[i - 1].value);
+                        intervaloTotal += entradaMs - ultimaSaidaMs;
+                    }
+                }
+            }
+
+            const credito = horasTrabalhadas > cargaHorariaMs ? horasTrabalhadas - cargaHorariaMs : 0;
+            const debito = horasTrabalhadas < cargaHorariaMs ? cargaHorariaMs - horasTrabalhadas : 0;
+
+            // Exibindo os resultados na tabela
+            document.getElementById('horas-trabalhadas').innerText = converterMsParaHora(horasTrabalhadas);
+            document.getElementById('debito').innerText = debito > 0 ? converterMsParaHora(debito) : '-';
+            document.getElementById('credito').innerText = credito > 0 ? converterMsParaHora(credito) : '-';
+            document.getElementById('intervalo').innerText = intervaloTotal > 0 ? converterMsParaHora(intervaloTotal) : '-';
+            document.getElementById('horas-normais').innerText = converterMsParaHora(horasTrabalhadas);
+            document.getElementById('adicional-noturno').innerText = '-';  // Placeholder for additional logic if needed
+        });
+    </script>
 </body>
 </html>
