@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Horas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        label, input {
+            font-size: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="time"] {
+            width: 100px;
+            padding: 8px;
+            margin-right: 10px;
+        }
+        .marcacoes input[type="text"] {
+            margin-right: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #288cea;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 10px;
+        }
+        button.remover {
+            background-color: #ff6347;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+
+        thead th, tbody td {
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        .resultado {
+            border: 2px solid rgb(6, 6, 6);
+            border-radius: 2500px;
+            padding: 5px;
+            width: 240px;
+        }
+        .Borda {
+            border-radius: 5px;
+            border: 1px solid rgb(0, 0, 0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <label style="font-family: Arial, sans-serif; font-size: 24px;" for="carga-horaria">Carga Horária</label>
+        <input class="Borda" type="time" id="carga-horaria" name="carga-horaria" placeholder="Ex: 8h 0m">
+        <br><br>
+
+        <label style="font-family: Arial, sans-serif; font-size: 24px;">Marcações</label>
+        <div class="marcacoes" id="marcacoes">
+            <input class="Borda" type="time" name="marcacao1">
+            <input class="Borda" type="time" name="marcacao2">
+            <input class="Borda" type="time" name="marcacao3">
+            <input class="Borda" type="time" name="marcacao4">
+            <button id="add-marcacao">+</button>
+            <button id="remover-marcacao" class="remover">-</button>
+        </div>
+
+        <button id="calcular">CALCULAR</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>HORAS TRABALHADAS</th>
+                    <th>DÉBITO</th>
+                    <th>CRÉDITO</th>
+                    <th>HORAS TRABALHADAS NORMAIS</th>
+                    <th>ADICIONAL NOTURNO</th>
+                    <th>INTERVALO</th>
+                </tr>
+            </thead>
+            <tbody class="resultado" id="resultados">
+                <tr>
+                    <td id="horas-trabalhadas">-</td>
+                    <td id="debito">-</td>
+                    <td id="credito">-</td>
+                    <td id="horas-normais">-</td>
+                    <td id="adicional-noturno">-</td>
+                    <td id="intervalo">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Função para converter horas em milissegundos
+        function converterHoraParaMs(hora) {
+            const [h, m] = hora.split(':');
+            return (+h * 60 + +m) * 60 * 1000; // Convertendo horas e minutos para milissegundos
+        }
+
+        // Função para converter milissegundos para o formato HH:MM
+        function converterMsParaHora(ms) {
+            const horas = Math.floor(ms / (60 * 60 * 1000));
+            const minutos = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+            return `${horas}h ${minutos}m`;
+        }
+
+        // Adiciona mais marcações de tempo
+        document.getElementById('add-marcacao').addEventListener('click', function() {
+            const marcacoesDiv = document.getElementById('marcacoes');
+            const novaMarcacaoE = document.createElement('input');
+            novaMarcacaoE.setAttribute('type', 'time');
+            novaMarcacaoE.classList.add('Borda');
+            const novaMarcacaoS = document.createElement('input');
+            novaMarcacaoS.setAttribute('type', 'time');
+            novaMarcacaoS.classList.add('Borda');
+
+            marcacoesDiv.insertBefore(novaMarcacaoE, document.getElementById('add-marcacao'));
+            marcacoesDiv.insertBefore(novaMarcacaoS, document.getElementById('add-marcacao'));
+        });
+
+        // Remove o último par de marcações de tempo
+        document.getElementById('remover-marcacao').addEventListener('click', function() {
+            const marcacoesDiv = document.getElementById('marcacoes');
+            const marcacoes = marcacoesDiv.querySelectorAll('input[type="time"]');
+            
+            if (marcacoes.length > 4) { 
+                marcacoesDiv.removeChild(marcacoes[marcacoes.length - 1]); 
+                marcacoesDiv.removeChild(marcacoes[marcacoes.length - 2]); 
+            }
+        });
+
+        // Função de cálculo ao clicar no botão CALCULAR
+        document.getElementById('calcular').addEventListener('click', function() {
+            const cargaHorariaInput = document.getElementById('carga-horaria').value;
+            const marcacoes = document.querySelectorAll('.marcacoes input[type="time"]');
+            
+            if (!cargaHorariaInput) {
+                alert('Por favor, insira a carga horária.');
+                return;
+            }
+
+            if (marcacoes.length < 2) {
+                alert('Insira pelo menos duas marcações de tempo.');
+                return;
+            }
+
+            const cargaHorariaMs = converterHoraParaMs(cargaHorariaInput);
+
+            let horasTrabalhadas = 0;
+            let intervaloTotal = 0;
+            let adicionalNoturno = 0;
+
+            for (let i = 0; i < marcacoes.length; i += 2) {
+                if (marcacoes[i] && marcacoes[i + 1] && marcacoes[i].value && marcacoes[i + 1].value) {
+                    const entradaMs = converterHoraParaMs(marcacoes[i].value);
+                    let saidaMs = converterHoraParaMs(marcacoes[i + 1].value);
+
+                    if (saidaMs < entradaMs) {
+                        saidaMs += 24 * 60 * 60 * 1000;
+                    }
+
+                    horasTrabalhadas += saidaMs - entradaMs;
+
+                    const inicioNoturnoMs = converterHoraParaMs('22:00');
+                    const fimNoturnoMs = converterHoraParaMs('05:00') + 24 * 60 * 60 * 1000;
+                    const maxEntrada = Math.max(entradaMs, inicioNoturnoMs);
+                    const minSaida = Math.min(saidaMs, fimNoturnoMs);
+
+                    if (maxEntrada < minSaida) {
+                        const horasNoturnasMs = minSaida - maxEntrada;
+
+                        // Adiciona 20% (cada minuto vale 1,2 minutos)
+                        adicionalNoturno += horasNoturnasMs * 1.2;
+                    }
+
+                    if (i > 0) {
+                        const ultimaSaidaMs = converterHoraParaMs(marcacoes[i - 1].value);
+                        intervaloTotal += entradaMs - ultimaSaidaMs;
+                    }
+                }
+            }
+
+            const toleranciaMs = 10 * 60 * 1000;
+            const horasNormais = horasTrabalhadas > cargaHorariaMs ? cargaHorariaMs : horasTrabalhadas;
+
+            const diferenca = horasTrabalhadas - cargaHorariaMs;
+            let credito = 0;
+            let debito = 0;
+
+            if (Math.abs(diferenca) > toleranciaMs) {
+                if (diferenca > 0) {
+                    credito = diferenca;
+                } else {
+                    debito = Math.abs(diferenca);
+                }
+            }
+
+            document.getElementById('horas-trabalhadas').innerText = converterMsParaHora(horasTrabalhadas);
+            document.getElementById('horas-normais').innerText = converterMsParaHora(horasNormais);
+            document.getElementById('debito').innerText = debito > 0 ? converterMsParaHora(debito) : '-';
+            document.getElementById('credito').innerText = credito > 0 ? converterMsParaHora(credito) : '-';
+            document.getElementById('intervalo').innerText = intervaloTotal > 0 ? converterMsParaHora(intervaloTotal) : '-';
+            document.getElementById('adicional-noturno').innerText = adicionalNoturno > 0 ? converterMsParaHora(adicionalNoturno) : '-';
+        });
+    </script>
+</body>
+</html>
