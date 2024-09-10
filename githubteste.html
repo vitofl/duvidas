@@ -20,7 +20,7 @@
             display: block;
             margin-bottom: 8px;
         }
-        input[type="text"] {
+        input[type="text"], input[type="time"] {
             width: 100px;
             padding: 8px;
             margin-right: 10px;
@@ -37,6 +37,9 @@
             font-size: 16px;
             border-radius: 10px;
         }
+        button.remover {
+            background-color: #ff6347;
+        }
         table {
             width: 100%;
             margin-top: 20px;
@@ -49,7 +52,6 @@
         }
         th {
             background-color: #f2f2f2;
-            
         }
 
         thead th, tbody td {
@@ -58,10 +60,10 @@
         }
         
         .resultado {
-            border: 2px solid rgb(6, 6, 6); /* Borda de cada retângulo */
-            border-radius: 2500px; /* Arredonda os cantos de cada retângulo */
-            padding: 5px; /* Espaçamento interno de cada retângulo */
-            width: 240px; /* Largura de cada retângulo */
+            border: 2px solid rgb(6, 6, 6);
+            border-radius: 2500px;
+            padding: 5px;
+            width: 240px;
         }
         .Borda {
             border-radius: 5px;
@@ -82,6 +84,7 @@
             <input class="Borda" type="time" name="marcacao3">
             <input class="Borda" type="time" name="marcacao4">
             <button id="add-marcacao">+</button>
+            <button id="remover-marcacao" class="remover">-</button>
         </div>
 
         <button id="calcular">CALCULAR</button>
@@ -129,11 +132,24 @@
             const marcacoesDiv = document.getElementById('marcacoes');
             const novaMarcacaoE = document.createElement('input');
             novaMarcacaoE.setAttribute('type', 'time');
+            novaMarcacaoE.classList.add('Borda');
             const novaMarcacaoS = document.createElement('input');
             novaMarcacaoS.setAttribute('type', 'time');
+            novaMarcacaoS.classList.add('Borda');
 
-            marcacoesDiv.insertBefore(novaMarcacaoE, this);
-            marcacoesDiv.insertBefore(novaMarcacaoS, this);
+            marcacoesDiv.insertBefore(novaMarcacaoE, document.getElementById('add-marcacao'));
+            marcacoesDiv.insertBefore(novaMarcacaoS, document.getElementById('add-marcacao'));
+        });
+
+        // Remove o último par de marcações de tempo
+        document.getElementById('remover-marcacao').addEventListener('click', function() {
+            const marcacoesDiv = document.getElementById('marcacoes');
+            const marcacoes = marcacoesDiv.querySelectorAll('input[type="time"]');
+            
+            if (marcacoes.length > 4) { 
+                marcacoesDiv.removeChild(marcacoes[marcacoes.length - 1]); 
+                marcacoesDiv.removeChild(marcacoes[marcacoes.length - 2]); 
+            }
         });
 
         // Função de cálculo ao clicar no botão CALCULAR
@@ -151,17 +167,34 @@
                 return;
             }
 
-            // Converte a carga horária de string para milissegundos (Ex: "8h 0m")
-            const cargaHorariaMs = converterHoraParaMs(cargaHorariaInput.replace('h', ':').replace('m', ''));
+            const cargaHorariaMs = converterHoraParaMs(cargaHorariaInput);
 
             let horasTrabalhadas = 0;
             let intervaloTotal = 0;
+            let adicionalNoturno = 0;
 
             for (let i = 0; i < marcacoes.length; i += 2) {
                 if (marcacoes[i] && marcacoes[i + 1] && marcacoes[i].value && marcacoes[i + 1].value) {
                     const entradaMs = converterHoraParaMs(marcacoes[i].value);
-                    const saidaMs = converterHoraParaMs(marcacoes[i + 1].value);
+                    let saidaMs = converterHoraParaMs(marcacoes[i + 1].value);
+
+                    if (saidaMs < entradaMs) {
+                        saidaMs += 24 * 60 * 60 * 1000;
+                    }
+
                     horasTrabalhadas += saidaMs - entradaMs;
+
+                    const inicioNoturnoMs = converterHoraParaMs('22:00');
+                    const fimNoturnoMs = converterHoraParaMs('05:00') + 24 * 60 * 60 * 1000;
+                    const maxEntrada = Math.max(entradaMs, inicioNoturnoMs);
+                    const minSaida = Math.min(saidaMs, fimNoturnoMs);
+
+                    if (maxEntrada < minSaida) {
+                        const horasNoturnasMs = minSaida - maxEntrada;
+
+                        // Adiciona 20% (cada minuto vale 1,2 minutos)
+                        adicionalNoturno += horasNoturnasMs * 1.2;
+                    }
 
                     if (i > 0) {
                         const ultimaSaidaMs = converterHoraParaMs(marcacoes[i - 1].value);
@@ -170,16 +203,27 @@
                 }
             }
 
-            const credito = horasTrabalhadas > cargaHorariaMs ? horasTrabalhadas - cargaHorariaMs : 0;
-            const debito = horasTrabalhadas < cargaHorariaMs ? cargaHorariaMs - horasTrabalhadas : 0;
+            const toleranciaMs = 10 * 60 * 1000;
+            const horasNormais = horasTrabalhadas > cargaHorariaMs ? cargaHorariaMs : horasTrabalhadas;
 
-            // Exibindo os resultados na tabela
+            const diferenca = horasTrabalhadas - cargaHorariaMs;
+            let credito = 0;
+            let debito = 0;
+
+            if (Math.abs(diferenca) > toleranciaMs) {
+                if (diferenca > 0) {
+                    credito = diferenca;
+                } else {
+                    debito = Math.abs(diferenca);
+                }
+            }
+
             document.getElementById('horas-trabalhadas').innerText = converterMsParaHora(horasTrabalhadas);
+            document.getElementById('horas-normais').innerText = converterMsParaHora(horasNormais);
             document.getElementById('debito').innerText = debito > 0 ? converterMsParaHora(debito) : '-';
             document.getElementById('credito').innerText = credito > 0 ? converterMsParaHora(credito) : '-';
             document.getElementById('intervalo').innerText = intervaloTotal > 0 ? converterMsParaHora(intervaloTotal) : '-';
-            document.getElementById('horas-normais').innerText = converterMsParaHora(horasTrabalhadas);
-            document.getElementById('adicional-noturno').innerText = '-';  // Placeholder for additional logic if needed
+            document.getElementById('adicional-noturno').innerText = adicionalNoturno > 0 ? converterMsParaHora(adicionalNoturno) : '-';
         });
     </script>
 </body>
